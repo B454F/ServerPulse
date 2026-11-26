@@ -4,6 +4,8 @@ ServerPulse collects CPU, memory and disk metrics from Windows devices and turns
 
 [Türkçe](README.tr.md) · [Installation and usage](docs/setup.md) · [Architecture](docs/architecture.md)
 
+[![ServerPulse Cloud v2 system architecture (Turkish)](docs/images/system-architecture.png)](docs/images/system-architecture.png)
+
 | Directory | Contents |
 | --- | --- |
 | `backend/` | Authentication, device lifecycle, MQTT ingestion, SQLite and API |

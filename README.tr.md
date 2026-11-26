@@ -4,6 +4,8 @@ ServerPulse, Windows cihazlarından işlemci, bellek ve disk ölçümlerini topl
 
 [English](README.md) · [Kurulum ve kullanım](docs/kurulum.tr.md) · [Mimari ve düzenlenebilir çizimler](docs/architecture.md)
 
+[![ServerPulse Cloud v2 sistem mimarisi](docs/images/system-architecture.png)](docs/images/system-architecture.png)
+
 | Dizin | İçerik |
 | --- | --- |
 | `backend/` | Kimlik doğrulama, cihaz yönetimi, MQTT ve SQLite |
