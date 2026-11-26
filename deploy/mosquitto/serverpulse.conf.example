@@ -1,0 +1,10 @@
+# Copy to the Mosquitto configuration directory on a fresh host.
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+acl_file /etc/mosquitto/acl
+
+listener 1883 127.0.0.1
+
+listener 8883
+certfile /etc/mosquitto/certs/broker-fullchain.pem
+keyfile /etc/mosquitto/certs/broker-key.pem

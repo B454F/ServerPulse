@@ -1,0 +1,261 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>ServerPulse Cloud</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+
+<section id="auth-screen" class="auth-screen">
+
+    <div class="auth-card">
+
+        <div class="brand">ϟ SERVERPULSE</div>
+        <p class="muted">Cloud Infrastructure Monitoring</p>
+
+        <h1 id="auth-title">Welcome back</h1>
+
+        <form id="auth-form">
+
+            <div id="name-field" hidden>
+                <label>Full name</label>
+                <input id="name" maxlength="100">
+            </div>
+
+            <label>Email address</label>
+            <input id="email" type="email"
+                   autocomplete="email" required>
+
+            <label>Password</label>
+            <input id="password" type="password" required>
+
+            <button id="auth-submit" type="submit">
+                Sign in
+            </button>
+
+        </form>
+
+        <p id="auth-message" class="message"></p>
+
+        <button id="auth-switch" class="text-button">
+            Don't have an account? Register
+        </button>
+
+    </div>
+
+</section>
+
+
+<section id="dashboard" class="dashboard" hidden>
+
+    <aside class="sidebar">
+
+        <div class="brand">ϟ SERVERPULSE</div>
+        <p class="muted">CLOUD WORKSPACE</p>
+
+        <nav>
+            <button data-page="Overview" class="active">
+                Overview
+            </button>
+
+            <button data-page="Devices">Devices</button>
+            <button data-page="Analytics">Analytics</button>
+            <button data-page="Alerts">Alerts</button>
+            <button data-page="Settings">Settings</button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="online-dot"></span>
+            MQTT / TLS
+
+            <button id="logout" class="secondary">
+                Sign out
+            </button>
+        </div>
+
+    </aside>
+
+
+    <main>
+
+        <header class="topbar">
+            <div>
+                <h1 id="page-title">Overview</h1>
+                <p id="welcome" class="muted"></p>
+            </div>
+
+            <button id="add-device">
+                + Add Device
+            </button>
+
+<a href="/downloads/ServerPulseSetup.exe"
+   class="download-agent-button"
+   download>
+    Download Agent
+</a>
+
+<p id="device-quota" class="device-quota">
+            Device capacity: 0 / 5
+        </p>
+        </header>
+
+        <p id="dashboard-message" class="message"></p>
+
+
+        <section id="page-Overview" class="page">
+
+            <div class="stats-grid">
+
+                <article class="card">
+                    <p>Total Devices</p>
+                    <h2 id="total-devices">0</h2>
+                </article>
+
+                <article class="card">
+                    <p>Online Devices</p>
+                    <h2 id="online-devices" class="green">0</h2>
+                </article>
+
+                <article class="card">
+                    <p>Offline Devices</p>
+                    <h2 id="offline-devices" class="red">0</h2>
+                </article>
+
+                <article class="card">
+                <p>Pending Devices</p>
+                <h2 id="pending-devices">0</h2>
+        </article>
+
+        <article class="card">
+                <p>Revoked Devices</p>
+                <h2 id="revoked-devices" class="red">0</h2>
+        </article>
+
+            </div>
+
+            <h2>Resource utilization</h2>
+
+            <div class="metrics-grid">
+
+                <article class="card">
+                    <p>Average CPU</p>
+                    <h2 id="average-cpu">0%</h2>
+                    <progress id="cpu-bar" max="100"
+                              value="0"></progress>
+                </article>
+
+                <article class="card">
+                    <p>Average RAM</p>
+                    <h2 id="average-ram">0%</h2>
+                    <progress id="ram-bar" max="100"
+                              value="0"></progress>
+                </article>
+
+                <article class="card">
+                    <p>Average Disk</p>
+                    <h2 id="average-disk">0%</h2>
+                    <progress id="disk-bar" max="100"
+                              value="0"></progress>
+                </article>
+
+            </div>
+
+            <h2>Your infrastructure</h2>
+            <div id="overview-devices"></div>
+
+        </section>
+
+
+        <section id="page-Devices" class="page" hidden>
+            <div id="device-list"></div>
+        </section>
+
+
+        <section id="page-Analytics" class="page" hidden>
+
+            <article class="card">
+
+                <h2>Performance history</h2>
+
+                <label>Select device</label>
+                <select id="history-device"></select>
+
+                <label>Time range</label>
+                <select id="history-hours">
+                    <option value="1">Last hour</option>
+                    <option value="6">Last 6 hours</option>
+                    <option value="12">Last 12 hours</option>
+                    <option value="24">Last 24 hours</option>
+                </select>
+
+                <p class="muted">
+                    <span class="blue">● CPU</span>
+                    <span class="purple">● RAM</span>
+                    <span class="yellow">● Disk</span>
+                </p>
+
+                <canvas id="history-chart"
+                        width="1000" height="350"></canvas>
+
+                <p id="history-message" class="muted"></p>
+
+            </article>
+
+        </section>
+
+
+        <section id="page-Alerts" class="page" hidden>
+            <div id="alert-list"></div>
+        </section>
+
+
+        <section id="page-Settings" class="page" hidden>
+
+            <article class="card">
+
+                <h2>Account information</h2>
+                <p id="account-name"></p>
+                <p id="account-email" class="muted"></p>
+
+                <hr>
+
+                <h2>Connection settings</h2>
+                <p>MQTT transport: TLS</p>
+                <p>Dashboard refresh: 5 seconds</p>
+                <p>ServerPulse Cloud v2.0</p>
+
+            </article>
+
+        </section>
+
+    </main>
+
+</section>
+
+
+<dialog id="pairing-dialog">
+
+    <h2>Connect a new device</h2>
+
+    <p class="muted">
+        Enter this pairing code in ServerPulse Agent.
+    </p>
+
+    <div id="pairing-code">Generating...</div>
+
+    <p id="pairing-timer"></p>
+
+    <button id="copy-code">Copy code</button>
+    <button id="close-dialog" class="secondary">Close</button>
+
+</dialog>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+customtkinter==6.0.0
+paho-mqtt==2.2.0
+keyring==25.7.0
+psutil
+requests==2.34.2

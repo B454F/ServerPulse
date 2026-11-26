@@ -1,0 +1,129 @@
+#!/usr/bin/python3
+import sys
+import re
+import json
+import secrets
+import subprocess
+import fcntl
+import os
+import tempfile
+from pathlib import Path
+
+PASSWORD_FILE = Path("/etc/mosquitto/passwd")
+ACL_FILE = Path("/etc/mosquitto/acl")
+
+os.umask(0o077)
+
+
+def run_command(args):
+    subprocess.run(
+        args,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        timeout=30
+    )
+
+
+def reload_broker():
+    run_command([
+        "/usr/bin/systemctl",
+        "kill",
+        "--kill-who=main",
+        "--signal=HUP",
+        "mosquitto.service"
+    ])
+
+
+def main():
+    device_id = sys.stdin.readline(128).strip()
+
+    if not re.fullmatch(r"[a-f0-9]{32}", device_id):
+        raise ValueError("Invalid device ID")
+
+    username = f"device_{device_id}"
+    password = secrets.token_urlsafe(32)
+    topic = f"serverpulse/devices/{device_id}/telemetry"
+
+    with open("/run/serverpulse-provision.lock", "a") as lock:
+
+        fcntl.flock(lock, fcntl.LOCK_EX)
+
+        old_passwords = PASSWORD_FILE.read_bytes()
+        old_acl = ACL_FILE.read_bytes()
+
+        usernames = {
+            line.split(":", 1)[0]
+            for line in old_passwords.decode().splitlines()
+        }
+
+        if username in usernames:
+            raise ValueError("Device already exists")
+
+        with tempfile.TemporaryDirectory(
+            dir="/etc/mosquitto"
+        ) as directory:
+
+            temp_passwords = Path(directory) / "passwd"
+
+            try:
+                temp_passwords.write_text(
+                    f"{username}:{password}\n"
+                )
+
+                run_command([
+                    "/usr/bin/mosquitto_passwd",
+                    "-U",
+                    str(temp_passwords)
+                ])
+
+                hashed_entry = temp_passwords.read_bytes()
+
+                PASSWORD_FILE.write_bytes(
+                    old_passwords.rstrip(b"\n")
+                    + b"\n"
+                    + hashed_entry.strip()
+                    + b"\n"
+                )
+                ACL_FILE.write_bytes(
+                    old_acl.rstrip(b"\n")
+                    + f"\n\nuser {username}\n"
+                      f"topic write {topic}\n".encode()
+                )
+
+                run_command([
+                    "/usr/bin/chown",
+                    "root:mosquitto",
+                    str(PASSWORD_FILE),
+                    str(ACL_FILE)
+                ])
+
+                run_command([
+                    "/usr/bin/chmod",
+                    "640",
+                    str(PASSWORD_FILE),
+                    str(ACL_FILE)
+                ])
+
+                reload_broker()
+
+            except Exception:
+                PASSWORD_FILE.write_bytes(old_passwords)
+                ACL_FILE.write_bytes(old_acl)
+
+                reload_broker()
+                raise
+
+    print(json.dumps({
+        "mqtt_username": username,
+        "mqtt_password": password,
+        "mqtt_topic": topic
+    }))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        print("Provisioning failed", file=sys.stderr)
+        sys.exit(1)

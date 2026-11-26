@@ -1,0 +1,135 @@
+#!/usr/bin/python3
+
+import sys
+import re
+import os
+import fcntl
+import tempfile
+import subprocess
+from pathlib import Path
+
+
+PASSWORD_FILE = Path("/etc/mosquitto/passwd")
+ACL_FILE = Path("/etc/mosquitto/acl")
+
+os.umask(0o077)
+
+
+def atomic_write(path, content):
+
+    stat = path.stat()
+
+    fd, name = tempfile.mkstemp(
+        dir=path.parent
+    )
+
+    try:
+
+        with os.fdopen(fd, "wb") as file:
+            file.write(content)
+            file.flush()
+            os.fsync(file.fileno())
+
+        os.chown(name, stat.st_uid, stat.st_gid)
+        os.chmod(name, stat.st_mode & 0o777)
+
+        os.replace(name, path)
+
+    finally:
+
+        if os.path.exists(name):
+            os.unlink(name)
+
+
+def reload_broker():
+
+    subprocess.run(
+        [
+            "/usr/bin/systemctl",
+            "kill",
+            "--kill-who=main",
+            "--signal=HUP",
+            "mosquitto.service"
+        ],
+        check=True,
+        timeout=30
+    )
+
+
+def main():
+
+    device_id = sys.stdin.readline(128).strip()
+
+    if not re.fullmatch(r"[a-f0-9]{32}", device_id):
+        raise ValueError("Invalid device ID")
+
+    username = f"device_{device_id}"
+
+    with open("/run/serverpulse-provision.lock", "a") as lock:
+
+        fcntl.flock(lock, fcntl.LOCK_EX)
+
+        old_passwords = PASSWORD_FILE.read_bytes()
+        old_acl = ACL_FILE.read_bytes()
+
+        password_lines = []
+
+        for line in old_passwords.decode().splitlines():
+
+            if not line.strip():
+                continue
+
+            if line.split(":", 1)[0] != username:
+                password_lines.append(line)
+
+        acl_lines = []
+        skip = False
+
+        for line in old_acl.decode().splitlines():
+
+            parts = line.strip().split()
+
+            if parts and parts[0] == "user":
+
+                skip = (
+                    len(parts) == 2
+                    and parts[1] == username
+                )
+
+            if not skip:
+                acl_lines.append(line)
+
+        try:
+
+            atomic_write(
+                PASSWORD_FILE,
+                ("\n".join(password_lines) + "\n").encode()
+            )
+
+            atomic_write(
+                ACL_FILE,
+                ("\n".join(acl_lines) + "\n").encode()
+            )
+
+            reload_broker()
+
+        except Exception:
+
+            atomic_write(PASSWORD_FILE, old_passwords)
+            atomic_write(ACL_FILE, old_acl)
+
+            reload_broker()
+
+            raise
+
+    print("Device MQTT credentials revoked")
+
+
+if __name__ == "__main__":
+
+    try:
+        main()
+
+    except Exception:
+        print("Revocation failed", file=sys.stderr)
+        sys.exit(1)

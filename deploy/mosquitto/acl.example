@@ -1,0 +1,2 @@
+user serverpulse_ingest
+topic read serverpulse/devices/+/telemetry
